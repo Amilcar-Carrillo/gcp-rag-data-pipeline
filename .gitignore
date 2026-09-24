@@ -1,0 +1,9 @@
+# Credenciales de GCP (NUNCA subirlas a repositorios públicos)
+gcp-key.json
+*.json
+
+# Entorno virtual y temporales de Python
+venv/
+__pycache__/
+*.pyc
+.env
