@@ -1,37 +1,46 @@
 # 🧠 End-to-End Enterprise RAG Pipeline on Google Cloud Platform (GCP)
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gcp-rag-asistente.streamlit.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Amilcar--Carrillo%2Fgcp--rag--data--pipeline-blue?logo=github)](https://github.com/Amilcar-Carrillo/gcp-rag-data-pipeline)
+
+> 🚀 **Demo Interactiva en Producción:** Consulta y prueba el asistente corporativo en tiempo real directamente en tu navegador:  
+> 👉 **[https://gcp-rag-asistente.streamlit.app/](https://gcp-rag-asistente.streamlit.app/)**
+
+---
+
 Este proyecto implementa una arquitectura moderna de **Retrieval-Augmented Generation (RAG)** y canalización de datos sobre **Google Cloud Platform (GCP)**, permitiendo consultar políticas corporativas no estructuradas con alta precisión semántica, prevención de alucinaciones (Guardrails), gobernanza de metadatos e interfaz interactiva con Streamlit.
 
 ---
 
 ## 🏗️ Arquitectura de la Solución
 
+```text
 [Documentos Crudos TXT/PDF]
-│
-▼
+           │
+           ▼
 [Google Cloud Storage (GCS)] ➔ Capa Bronce / Raw Data Lake
-│
-▼
+           │
+           ▼
 [Python Ingestion Service]   ➔ Recursive Character Chunking + Enriquecimiento de Metadatos (Silver)
-│
-▼
+           │
+           ▼
 [Vertex AI Embeddings]       ➔ text-embedding-004 (Vectores densos de 768 dimensiones)
-│
-▼
+           │
+           ▼
 [BigQuery Vector Search]     ➔ Vector Store con cálculo de distancia coseno (ML.DISTANCE)
-│
-▼
+           │
+           ▼
 [Gemini + Guardrails]        ➔ Inferencia contextualizada y libre de alucinaciones
-│
-▼
+           │
+           ▼
 [Streamlit Web Application]  ➔ Asistente conversacional con trazabilidad de similitud semántica
 
-1. **Ingesta y Data Lake (Bronze Layer):** Almacenamiento de documentos no estructurados en **Google Cloud Storage (GCS)**.
+1. **Ingesta y Data Lake (Bronze Layer):** Almacenamiento y centralización de documentos corporativos no estructurados en **Google Cloud Storage (GCS)**.
 2. **Procesamiento y Chunking (Silver Layer):** Fragmentación semántica (*Recursive Character Chunking*) y enriquecimiento con metadatos de auditoría (departamento, versión de política, origen) mediante Python.
-3. **Generación de Embeddings:** Conversión de texto a vectores de 768 dimensiones utilizando el modelo fundacional `text-embedding-004` de **Vertex AI**.
+3. **Generación de Embeddings:** Conversión de texto a vectores densos de 768 dimensiones utilizando el modelo fundacional `text-embedding-004` de **Vertex AI**.
 4. **Almacenamiento Vectorial y Búsqueda Semántica:** Indexación en **BigQuery** y recuperación de fragmentos relevantes mediante cálculo distribuido de similitud coseno (`ML.DISTANCE`).
 5. **Generación Aumentada (Inferencia LLM):** Inyección contextual protegida con Guardrails hacia **Gemini** en Vertex AI para entrega de respuestas con citas de fuentes verificables.
-6. **Interfaz de Usuario (Observabilidad):** Aplicación en **Streamlit** que permite realizar consultas en lenguaje natural, auditar los fragmentos recuperados y evaluar los scores de similitud coseno en tiempo real.
+6. **Interfaz de Usuario y Observabilidad:** Aplicación web en **Streamlit** que permite realizar consultas en lenguaje natural, auditar los fragmentos recuperados y evaluar los scores de similitud coseno en tiempo real.
 
 ---
 
@@ -52,16 +61,7 @@ El sistema opera bajo **Guardrails estrictos**: responde consultas basándose ex
 * **Cloud Platform:** Google Cloud Platform (GCP)
 * **Data Lake & Storage:** Google Cloud Storage (GCS)
 * **Data Warehouse & Vector Store:** Google BigQuery (Vector Search / SQL)
-* **AI & LLM Services:** Vertex AI (`text-embedding-004`, `gemini-1.5-flash-002` / `gemini-2.5-flash`)
+* **AI & LLM Services:** Vertex AI (`text-embedding-004`, `gemini-2.5-flash` / `gemini-1.5-pro`)
 * **Framework de Chunking:** LangChain Text Splitters (`RecursiveCharacterTextSplitter`)
 * **Frontend & Observabilidad:** Streamlit
 * **Lenguaje:** Python 3
-
----
-
-## 🚀 Flujo de Ejecución
-
-### 1. Ingesta y Segmentación Semántica
-Lee el documento crudo de GCS, aplica Recursive Chunking y genera los fragmentos con metadatos en la capa Silver:
-```powershell
-python rag_ingestion_gcp.py
