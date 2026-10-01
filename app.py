@@ -2,6 +2,7 @@ import os
 import streamlit as st
 from google.cloud import bigquery
 from google import genai
+from google.oauth2 import service_account
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -10,25 +11,43 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 2. CREDENCIALES Y RECURSOS DE GCP ---
-GCP_KEY_PATH = "gcp-key.json"
+# --- 2. CREDENCIALES Y RECURSOS DE GCP (CONEXIÓN HÍBRIDA) ---
 PROJECT_ID = "proyecto-elt-gcp"
 LOCATION = "us-central1"
 DATASET_ID = "mi_data_warehouse"
 TABLE_ID = "rag_politicas_vectors"
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GCP_KEY_PATH
+GCP_KEY_PATH = "gcp-key.json"
 
 @st.cache_resource
 def get_gcp_clients():
-    bq = bigquery.Client(project=PROJECT_ID)
-    ai = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
-    return bq, ai
+    # 1. Modo Nube: Carga desde st.secrets si está desplegado en Streamlit Cloud
+    if "gcp_service_account" in st.secrets:
+        creds = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"]
+        )
+        bq = bigquery.Client(credentials=creds, project=creds.project_id)
+        ai = genai.Client(vertexai=True, project=creds.project_id, location=LOCATION)
+        return bq, ai
+
+    # 2. Modo Local: Si existe el archivo físico gcp-key.json
+    elif os.path.exists(GCP_KEY_PATH):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GCP_KEY_PATH
+        creds = service_account.Credentials.from_service_account_file(GCP_KEY_PATH)
+        bq = bigquery.Client(credentials=creds, project=PROJECT_ID)
+        ai = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+        return bq, ai
+
+    # 3. Fallback: Credenciales del entorno (ADC)
+    else:
+        bq = bigquery.Client(project=PROJECT_ID)
+        ai = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+        return bq, ai
 
 try:
     bq_client, ai_client = get_gcp_clients()
 except Exception as e:
     st.error(f"Error conectando con los servicios de GCP: {e}")
+    st.stop()
 
 # --- 3. BARRA LATERAL: ALCANCE Y TEMAS DISPONIBLES ---
 with st.sidebar:
